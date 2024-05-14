@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Search</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .form-container {
+            position: relative;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        label {
+            font-weight: bold;
+        }
+        input[type="text"], input[type="datetime-local"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button[type="submit"], button[type="button"] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 49%;
+            margin-right: 2%;
+        }
+        button[type="button"] {
+            background-color: #f44336;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .loading-icon {
+            display: none;
+            position: absolute;
+            right: 10px;
+            top: 10px;
+        }
+        #log-results {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        #log-results h2 {
+            margin-top: 0;
+        }
+        #log-results ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        #log-results li {
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .error-message {
+            color: red;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Log Search</h1>
+    <div class="form-container">
+        <form id="search-form">
+            <label for="level">Level:</label>
+            <input type="text" id="level" name="level" placeholder="Enter log level...">
+            <br>
+            <label for="log-string">Log String:</label>
+            <input type="text" id="log-string" name="log_string" placeholder="Enter log string...">
+            <br>
+            <label for="start">Start Date:</label>
+            <input type="datetime-local" id="start" name="start">
+            <br>
+            <label for="end">End Date:</label>
+            <input type="datetime-local" id="end" name="end">
+            <br>
+            <label for="source">Source:</label>
+            <input type="text" id="source" name="source" placeholder="Enter log source...">
+            <br>
+            <button type="submit">Search</button>
+            <button type="button" onclick="clearResults()">Clear</button>
+            <i class="fas fa-spinner fa-spin loading-icon"></i>
+        </form>
+    </div>
+    <div id="log-results"></div>
+
+    <script>
+        const searchForm = document.getElementById('search-form');
+        const logResults = document.getElementById('log-results');
+
+        function clearResults() {
+            logResults.innerHTML = '';
+        }
+
+        searchForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const loadingIcon = document.querySelector('.loading-icon');
+            loadingIcon.style.display = 'inline-block';
+
+            const formData = new FormData(searchForm);
+            const queryParams = new URLSearchParams(formData).toString();
+
+            try {
+                const response = await fetch(`/search?${queryParams}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                displayLogs(data);
+            } catch (error) {
+                console.error('Error searching logs:', error.message);
+                logResults.innerHTML = `<p class="error-message">Error: ${error.message}</p>`;
+            } finally {
+                loadingIcon.style.display = 'none';
+            }
+        });
+
+        function displayLogs(logs) {
+            let html = '<h2>Search Results</h2>';
+            if (logs.length === 0) {
+                html += '<p>No logs found.</p>';
+            } else {
+                html += '<ul>';
+                logs.forEach(log => {
+                    html += `<li>${JSON.stringify(log)}</li>`;
+                });
+                html += '</ul>';
+            }
+            logResults.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
